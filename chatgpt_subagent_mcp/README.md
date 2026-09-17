@@ -41,7 +41,7 @@ Each fallback specialist is an independent Agents SDK run with its own agent ins
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-# export OPENAI_API_KEY=...
+export OPENAI_API_KEY=...
 python server.py
 ```
 
@@ -51,11 +51,11 @@ Your MCP endpoint is:
 http://localhost:8000/mcp
 ```
 
-For local ChatGPT testing, expose it with a tunnel such as ngrok and use the public `/mcp` URL.
+For a public tunnel, set `MCP_PUBLIC_HOST` to the tunnel hostname (without `https://`) before starting the server, then connect ChatGPT to the public `/mcp` URL. The server keeps MCP DNS-rebinding protection enabled and allowlists local hosts plus configured public hosts.
 
 ## Put it in ChatGPT
 
-1. Deploy this directory to a public HTTPS host (Render config is included), or tunnel the local port.
+1. Deploy this directory to a public HTTPS host (Render config is included), or expose the local port with a secure tunnel.
 2. Set `OPENAI_API_KEY` as a secret environment variable on the host.
 3. In ChatGPT, enable Developer Mode.
 4. Go to **Settings → Connectors** and add the public MCP endpoint, e.g. `https://your-service.onrender.com/mcp`.
@@ -72,9 +72,9 @@ You have a subagent primitive. Use `delegate` for one bounded specialist task. U
 
 The Blueprint is `chatgpt_subagent_mcp/render.yaml`. When creating a Render Blueprint from this repository, select the `chatgpt-native-subagents` branch and set the **Blueprint Path** to `chatgpt_subagent_mcp/render.yaml`. The service itself sets `rootDir: chatgpt_subagent_mcp`, so builds run from the correct monorepo directory.
 
-The only required secret is `OPENAI_API_KEY`.
+The only required secret is `OPENAI_API_KEY`. Render injects `RENDER_EXTERNAL_HOSTNAME` automatically, and the server uses it to build its MCP Host/Origin allowlist. If you later put the service behind another public hostname, set `MCP_PUBLIC_HOST` to that hostname too.
 
-For a hardened public deployment, replace the prototype's disabled DNS-rebinding check with an exact `TransportSecuritySettings(allowed_hosts=[...], allowed_origins=[...])` allowlist for your production hostname, and add connector authentication before broad distribution.
+For broad/public distribution, add connector authentication and normal production controls (rate limits, budgets, logging/redaction policy) around the MCP endpoint.
 
 ## Why the server calls OpenAI directly
 
