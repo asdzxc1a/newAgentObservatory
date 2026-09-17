@@ -3,6 +3,7 @@ services:
     name: chatgpt-native-subagent-primitive
     runtime: python
     plan: free
+    rootDir: chatgpt_subagent_mcp
     buildCommand: pip install -r requirements.txt
     startCommand: python server.py
     envVars:
