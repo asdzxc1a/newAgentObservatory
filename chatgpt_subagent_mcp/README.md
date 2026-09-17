@@ -76,6 +76,6 @@ The only required secret is `OPENAI_API_KEY`.
 
 For a hardened public deployment, replace the prototype's disabled DNS-rebinding check with an exact `TransportSecuritySettings(allowed_hosts=[...], allowed_origins=[...])` allowlist for your production hostname, and add connector authentication before broad distribution.
 
-## Current limitation that matters
+## Why the server calls OpenAI directly
 
-ChatGPT Apps/custom MCP connectors do not currently expose MCP Sampling to servers, so the server cannot ask the *ChatGPT host itself* to create extra model turns without an API credential. That is why this design calls the OpenAI API server-side. If ChatGPT gains MCP Sampling support later, the same MCP tool surface can be upgraded to use host-provided model calls and potentially remove the separate API-key requirement.
+ChatGPT Apps/custom MCP connectors currently do not expose MCP Sampling to servers, so a connector cannot ask the ChatGPT host to create nested model turns for it. More importantly, MCP Sampling was deprecated in the 2026-07-28 protocol revision, whose guidance tells new implementations to integrate directly with LLM provider APIs. This server therefore uses `OPENAI_API_KEY` server-side on purpose: it is both compatible with ChatGPT today and aligned with the current MCP direction.
