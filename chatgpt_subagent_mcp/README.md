@@ -31,7 +31,7 @@ Modes:
 - `hosted` — require the experimental hosted multi-agent path.
 - `local` — force explicit Agents SDK parallel fan-out/fan-in.
 
-## Why this is materially different from prompt-only “role play”
+## Why this is materially different from prompt-only role play
 
 Each fallback specialist is an independent Agents SDK run with its own agent instructions and model turn. The hosted path is stronger: OpenAI's experimental Responses multi-agent runtime creates and coordinates subagents server-side.
 
@@ -41,7 +41,6 @@ Each fallback specialist is an independent Agents SDK run with its own agent ins
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env
 # export OPENAI_API_KEY=...
 python server.py
 ```
@@ -71,7 +70,9 @@ You have a subagent primitive. Use `delegate` for one bounded specialist task. U
 
 ## Render
 
-`render.yaml` is included. The only required secret is `OPENAI_API_KEY`.
+The Blueprint is `chatgpt_subagent_mcp/render.yaml`. When creating a Render Blueprint from this repository, select the `chatgpt-native-subagents` branch and set the **Blueprint Path** to `chatgpt_subagent_mcp/render.yaml`. The service itself sets `rootDir: chatgpt_subagent_mcp`, so builds run from the correct monorepo directory.
+
+The only required secret is `OPENAI_API_KEY`.
 
 For a hardened public deployment, replace the prototype's disabled DNS-rebinding check with an exact `TransportSecuritySettings(allowed_hosts=[...], allowed_origins=[...])` allowlist for your production hostname, and add connector authentication before broad distribution.
 
