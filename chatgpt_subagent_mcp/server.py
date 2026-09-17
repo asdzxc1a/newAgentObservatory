@@ -47,6 +47,50 @@ def _require_api_key() -> None:
         )
 
 
+def _normalize_hostname(value: str) -> str:
+    host = value.strip()
+    for prefix in ("https://", "http://"):
+        if host.startswith(prefix):
+            host = host[len(prefix) :]
+    return host.split("/", 1)[0].strip()
+
+
+def _transport_security() -> TransportSecuritySettings:
+    """Build a narrow Host/Origin allowlist for local and hosted deployments.
+
+    Render injects RENDER_EXTERNAL_HOSTNAME at runtime. Other hosts can set
+    MCP_PUBLIC_HOST to one hostname or a comma-separated list. This keeps DNS
+    rebinding protection enabled by default instead of broadly disabling it.
+    """
+    configured: list[str] = []
+    for source in (os.getenv("RENDER_EXTERNAL_HOSTNAME", ""), os.getenv("MCP_PUBLIC_HOST", "")):
+        configured.extend(_normalize_hostname(item) for item in source.split(",") if item.strip())
+    hosts = list(dict.fromkeys(host for host in configured if host))
+
+    if not hosts:
+        return TransportSecuritySettings(
+            enable_dns_rebinding_protection=True,
+            allowed_hosts=["127.0.0.1:*", "localhost:*", "[::1]:*"],
+            allowed_origins=[
+                "http://127.0.0.1:*",
+                "http://localhost:*",
+                "http://[::1]:*",
+            ],
+        )
+
+    allowed_hosts: list[str] = []
+    allowed_origins: list[str] = []
+    for host in hosts:
+        allowed_hosts.extend([host, f"{host}:*"])
+        allowed_origins.extend([f"https://{host}", f"https://{host}:*"])
+
+    return TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=list(dict.fromkeys(allowed_hosts)),
+        allowed_origins=list(dict.fromkeys(allowed_origins)),
+    )
+
+
 def _clean_roles(roles: list[str] | None) -> list[str]:
     cleaned = [r.strip() for r in (roles or []) if r and r.strip()]
     if not cleaned:
@@ -273,11 +317,10 @@ async def swarm(
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "8000"))
-    security = TransportSecuritySettings(enable_dns_rebinding_protection=False)
     mcp.run(
         transport="streamable-http",
         host="0.0.0.0",
         port=port,
         streamable_http_path="/mcp",
-        transport_security=security,
+        transport_security=_transport_security(),
     )
